@@ -42,7 +42,6 @@ public class TableController {
     @GetMapping("/getTableStructure")
     public String getTableStructure(HttpServletRequest request) throws IOException {
         String dataLibraryName = request.getParameter("name");
-        logger.info("dataLibraryName===>" + dataLibraryName);
         ReadConfig readConfig = new ReadConfig();
         readConfig.readJsonFile(dataLibraryName);
         JSONObject jsonObject = new JSONObject();
@@ -51,7 +50,6 @@ public class TableController {
             ArrayList<Map<String, String>> data = rd.getData();
             jsonObject.put("code", 200);
             jsonObject.put("data", data);
-            logger.info("返回表结构===>" + jsonObject.toString());
             return jsonObject.toString();
         } catch (Exception e) {
             logger.error("获取表结构异常：" + e.toString());
@@ -65,7 +63,6 @@ public class TableController {
     @GetMapping("/checkTableStructure")
     public String checkTableStructure(HttpServletRequest request) throws IOException {
         String dataLibraryName = request.getParameter("name");
-        logger.info("dataLibraryName===>" + dataLibraryName);
         ReadConfig readConfig = new ReadConfig();
         readConfig.readJsonFile(dataLibraryName);
         try {
@@ -81,7 +78,6 @@ public class TableController {
     @ApiOperation(value = "计算方法")
     @PostMapping("/clientComputing")
     public String clientComputing(@RequestBody Map<String, Object> map) throws Exception {
-        logger.info("-----------开始读取本地数据库配置----------------");
         String taskId = (String) map.get("taskId");
         String taskDir = taskBaseDir + taskId;
         String filePath = taskDir + "/testInput/tableJson/";
@@ -105,7 +101,6 @@ public class TableController {
         logStr += "log4j.appender.logfile.layout = org.apache.log4j.PatternLayout\n";
         logStr += "log4j.appender.logfile.layout.ConversionPattern = %d{yyyy-MM-dd HH:mm:ss,SSS} [%t] [%c] [%p] - %m%n";
         JsonUtils.bean3JsonFile(logStr, taskDir + "/log4j.properties");
-        logger.info("封装任务编号："+taskId);
 
         String databaseName1 = (String) map.get("databaseName");
         File file = new File("./dataBase.json");
@@ -119,7 +114,6 @@ public class TableController {
         fileReader.close();
         reader.close();
         String jsonStr = sb.toString();
-        //System.out.println(JSON.parseObject(jsonStr));
         JSONObject jsonObject = JSONObject.parseObject(jsonStr);
         Map<String, Object> databaseInfo = (Map<String, Object>) jsonObject.get(databaseName1);
         String serverName = databaseInfo.get("serverName").toString();
@@ -128,7 +122,6 @@ public class TableController {
         String userName = databaseInfo.get("userName").toString();
         String passwd = databaseInfo.get("passwd").toString();
         HashMap<String, Object> testParam = (HashMap<String, Object>) map.get("testParam");
-        logger.info("-----------开始封装testParam.json文件数据----------------");
         testParam.put("task_name", taskId);
         testParam.put("sql_parse_result", taskDir + "/testInput/plan/MySQL_plan.json");
         testParam.put("database_metadata_json_dir", taskDir + "/testInput/tableJson");
@@ -141,22 +134,15 @@ public class TableController {
         testParam.put("isInputParty", map.get("isInputParty").toString());
         testParam.put("compute_role", map.get("order").toString());
         testParam.put("isComputeParty", map.get("isComputeParty").toString());
-        logger.info("testParam===>" + JSON.toJSONString(testParam));
-        logger.info("-----------结束封装testParam.json文件数据----------------");
         JsonUtils.bean3JsonFile(JSON.toJSONString(testParam), taskDir + "/testInput/testParam.json");
-
-        logger.info("-----------开始封装保存MySQL_plan.json文件内容----------------");
         String config = (String) map.get("config");
         ArrayList<Map<String, String>> tableList = (ArrayList<Map<String, String>>) map.get("tableList");
 
         JsonUtils.bean3JsonFile(config, taskDir + "/testInput/plan/MySQL_plan.json");
-        logger.info("-----------结束封装保存MySQL_plan.json文件内容----------------");
-        //JsonUtils.bean3JsonFile(config,"D:\\"+taskId+"\\config.json");
-        logger.info("-----------开始封装表格.json文件内容----------------");
+
         for (Map<String, String> stringStringMap : tableList) {
             JsonUtils.bean3JsonFile(stringStringMap.get("jsonStr"), filePath + stringStringMap.get("tableName") + ".json");
         }
-        logger.info("-----------开始封装表格.json文件内容----------------");
         return "200";
     }
 
@@ -170,11 +156,7 @@ public class TableController {
         Files.write(Paths.get("./start_db3.sh"), Arrays.asList("#!/bin/bash", shText), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         File file = new File("start_db3.sh");
         file.setExecutable(true);
-        logger.info("shText："+shText);
-        logger.info("-----------开始运行jar----------------");
         Process exec = Runtime.getRuntime().exec("./start_db3.sh");
-        logger.info("-----------jar运行结束----------------");
-        logger.info("-----------开始读取日志文件----------------");
 
         try {
             exec.waitFor();
@@ -201,7 +183,6 @@ public class TableController {
         boolean flag = false;
         boolean stopFor = false;
         for (int i = 0; i < 30; i++) {
-            logger.info("执行到第"+i+"次");
             if (i == 29) {
                 flag = true;
             }
@@ -225,11 +206,8 @@ public class TableController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            logger.info("日志长度：" + logList.size());
             ArrayList<String> sendLogList = new ArrayList<>();
             if (newLogList.size() > 0) {
-                logger.info("newLogList====>"+newLogList.size());
-                logger.info("logList====>"+logList.size());
                 if (logList.size() != newLogList.size()) {
                     int num = logList.size() - newLogList.size();
                     for (int j = 0; j < num; j++) {
@@ -238,12 +216,9 @@ public class TableController {
                     newLogList = logList;
                 }
             } else {
-                logger.info("newLogList第一次进====>"+newLogList.size());
                 newLogList = logList;
                 sendLogList = logList;
-                logger.info("newLogList第一次出====>"+newLogList.size());
             }
-            logger.info("--------------------sendLogList----------------------"+sendLogList.size());
             if (sendLogList.size() > 0) {
                 Map<String, Object> sendInfo = new HashMap<>();
                 sendInfo.put("companyId", map.get("companyId").toString());
@@ -256,8 +231,6 @@ public class TableController {
                                 .body();
                 logger.info("save client log res {}", result1);
                 for (String log : sendLogList) {
-                    logger.info("log====>"+log);
-                    logger.info("匹配结果====>"+log.contains("自己的任务已经完成了"));
                     if (log.contains("自己的任务已经完成了")){
                         ArrayList<String> list = new ArrayList<>();
                         list.add("执行完成");
@@ -280,7 +253,6 @@ public class TableController {
                 e.printStackTrace();
             }
         }
-        logger.info("-----------结束读取日志文件----------------");
         if (flag) {
             ArrayList<String> errLogs = new ArrayList<>();
             errLogs.add("日志获取错误");
@@ -327,7 +299,6 @@ public class TableController {
     @ApiOperation(value = "获取数据库配置信息")
     @PostMapping("/getDatabaseInfo")
     public String getDatabaseInfo(@RequestBody Map<String, String> map) throws Exception {
-        System.out.println("请求到接口");
         String dataBaseName = map.get("dataBaseName");
         File file = new File("./dataBase.json");
         FileReader fileReader = new FileReader(file);
@@ -388,7 +359,6 @@ public class TableController {
                     try (ResultSet queryResult = statement.executeQuery(sql1)) {
                         while (queryResult.next()) {
                             String tableName = queryResult.getString(1);
-                            logger.info("tableName===>" + tableName);
                             if (taskId.equals(tableName)) {
                                 hasTable = true;
                                 break;
